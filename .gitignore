@@ -1,0 +1,11 @@
+# Ignore contents of nextcloud/html
+nextcloud/html/*
+!nextcloud/html/.gitkeep
+
+# Ignore contents of nextcloud/redis
+nextcloud/redis/*
+!nextcloud/redis/.gitkeep
+
+# Ignore contents of nextcloud/db
+nextcloud/db/*
+!nextcloud/db/.gitkeep

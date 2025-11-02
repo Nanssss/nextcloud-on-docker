@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+
+  # Nextcloud
+  nextcloud:
+    image: nextcloud:latest
+    restart: always
+    env_file:
+      - ./nextcloud/nextcloud.env
+      - ./nextcloud/db.env
+      - ./nextcloud/redis.env
+    volumes:
+      - ./nextcloud/html:/var/www/html
+      - /mnt/EXT_HDD/nextcloud/data:/var/www/html/data
+    depends_on:
+      - mariadb
+      - redis
+    ports:
+      - 8080:80
+
+  # MariaDB server for Nextcloud
+  mariadb:
+    image: mariadb:latest
+    restart: always
+    command: --transaction-isolation=READ-COMMITTED --log-bin=binlog --binlog-format=ROW
+    env_file:
+      - ./nextcloud/db.env
+    volumes:
+      - ./nextcloud/db:/var/lib/mysql
+
+  # redis server for caching
+  redis:
+    image: redis:alpine
+    restart: always
+    env_file:
+      - ./nextcloud/redis.env
+    volumes:
+      - ./nextcloud/redis:/data
+    command: ["redis-server", "--requirepass", "to_fill", "--port", "to_fill"] # Replace to_fill with your Redis password and port from redis.env
