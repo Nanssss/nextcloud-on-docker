@@ -1,6 +1,6 @@
 # nextcloud-on-docker
 
-You can use this guide to setup a Nextcloud install on a Docker container, using Nginx, Certbot, Redis.
+You can use this guide to setup a Nextcloud install on a Docker container, using Nginx, Certbot, Redis. This was done on my home server, running Ubuntu Server (22.04.4 LTS - Jammy Jellyfish).
 
 - You first have to follow the [Setup](#setup-and-docker-installation) step to install everything required.
 - Then, you can blindly follow the [Configuration](#configuration) step to set everything up. Here, you will only **have to replace `to_fill` fields with your actual data**, you can then use `<CTRL>+F` to find all of these fields.
