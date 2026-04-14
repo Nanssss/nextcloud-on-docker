@@ -1,6 +1,6 @@
 # nextcloud-on-docker
 
-You can use this guide to setup a Nextcloud install on a Docker container, using Nginx, Certbot, Redis. This was done on my home server, running Ubuntu Server (22.04.4 LTS - Jammy Jellyfish).
+You can use this guide to setup Nextcloud on a Docker container, using Nginx, Certbot, Redis and MariaDB. This was done on my home server, running Ubuntu Server.
 
 - You first have to follow the [Setup](#setup-and-docker-installation) step to install everything required.
 - Then, you can blindly follow the [Configuration](#configuration) step to set everything up. Here, you will only **have to replace `to_fill` fields with your actual data**, you can then use `<CTRL>+F` to find all of these fields.
@@ -50,37 +50,13 @@ These are the preliminary steps before cloning this repository in step [Configur
 
 ## Set up a static IP address
 
-1. Identify network interface:
-```bash
-ip addr
-```
-Look for your active network interface (e.g., eth0, enp0s3, or wlan0). Note its name.
+The best way to do that is usually on your **Internet Provider administration panel**. Look for something like **DHCP**, and make your local ip address static.
 
-2. Edit the Network Configuration File
-```bash
-sudo nano /etc/netplan/00-installer-config.yaml
-```
-
-3. Configure Static IP Address
-```yaml
-network:
-  ethernets:
-    enp1s0:
-      dhcp4: no
-      dhcp6: no
-      addresses:
-        - your_ip_address/24 # Fill here with your IP address
-      nameservers:
-        addresses: [192.168.1.1] # Your nameserver address, it is usually 192.168.1.1
-      routes:
-        - to: default
-          via: 192.168.1.1 # Your nameserver address, it is usually 192.168.1.1
-  version: 2
-```
+Otherwise, you can also use network configuration tools, such as NetworkManager, Netplan, dhcpcd... If you prefer this option, I let you do your own researches according to the tool you use.
 
 ## Network configuration
 
-You have to enable DMZ for your server in your livebox administration panel.
+On your Internet Provider administration panel, **open ports 80 (http) and 443 (https)** and route them to your server local IP address.
 After that, set up the linux firewall with:
 ```bash
 sudo ufw allow http
@@ -89,60 +65,57 @@ sudo ufw allow ssh
 sudo ufw enable
 ```
 
-## Docker installation
+From here, ufw will be enabled at boot.
 
-1. Update existing packages:
-```bash
-sudo apt update
-```
+## Docker & Docker Compose installation
 
-2. Install dependencies to allow apt to use a repository over HTTPS:
-```bash
-sudo apt install apt-transport-https ca-certificates curl software-properties-common
+The Docker installation procedure changes according to the distribution you are running.
 
-```
+Also, you can choose to either:
+- [install Docker Desktop](https://docs.docker.com/desktop/)) which embeds Docker Engine and Docker Compose.
+- [install Docker Engine](https://docs.docker.com/engine/install) and then [install the Docker Compose Linux Plugin](https://docs.docker.com/compose/install/linux/#install-using-the-repository). I personally chose this method.
 
-3. Add the official Docker GPG key:
-```bash
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-
-```
-
-4. Configure the Docker stable repository:
-```bash
-echo "deb [signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-```
-
-5. Update packages again and install Docker:
-```bash
-sudo apt update
-sudo apt install docker-ce docker-ce-cli containerd.io
-```
-
-6. Add your user to the docker group to run Docker commands without sudo:
+After that, you can add your user to the docker group to be able to run Docker commands without sudo:
 ```bash
 sudo usermod -aG docker $USER
 ```
 
-## Docker-compose installation
-
-1. Download the current stable version of Docker Compose:
+You can verify everything was correctly installed with:
 ```bash
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-```
-
-2. Give execution permissions to the Docker Compose binary:
-```bash
-sudo chmod +x /usr/local/bin/docker-compose
-```
-
-3. Verify the installation:
-```bash
+docker --version
 docker-compose --version
 ```
 
 ## Mount an external drive to your server
+
+### Recommended format: ext4
+
+Get your drive partition name with `sudo fdisk -l` (in my case it was `/dev/sdb1`).
+
+Create a folder where the disk will be mounted:
+```bash
+mkdir /mnt/EXT_HDD
+```
+
+You can now mount the ext4 partition by doing:
+```bash
+sudo mount -t ext4 /dev/sdb1 /mnt/EXT_HDD/
+```
+
+To get your disk UUID, do:
+```bash
+ls -l /dev/disk/by-uuid/
+```
+
+If you want, you can automate the mounting at startup by editing the **/etc/fstab** file:
+```bash
+UUID=your_disk_UUID   /mnt/EXT_HDD    ext4     defaults     0       2
+```
+
+You can now test by running `sudo mount -a` and trying to create and read a file to ensure that you have the right permissions.
+
+
+### If you prefer to use NTFS for Windows Compatibility of your drive
 
 First, install ntfs-3g to be able to work with ntfs partition:
 ```bash
@@ -163,10 +136,6 @@ sudo mount -t ntfs-3g -o uid=33,gid=33,umask=0007 /dev/sdb1 /mnt/EXT_HDD/
 
 To get your disk UUID, do:
 ```bash
-sudo fdisk -l
-```
-followed by:
-```bash
 ls -l /dev/disk/by-uuid/
 ```
 
@@ -179,7 +148,10 @@ UUID=your_disk_UUID   /mnt/EXT_HDD    ntfs-3g auto,uid=33,gid=33,umask=0007     
 
 You can now test by running `sudo mount -a` and trying to create and read a file to ensure that you have the right permissions.
 
-Once it is ok, create a folder for your data, here `/nextcloud/data`:
+
+### Finish your drive setup
+
+Once it is ok, create a folder for your data:
 ```bash
 mkdir /mnt/EXT_HDD/nextcloud/data
 ```
