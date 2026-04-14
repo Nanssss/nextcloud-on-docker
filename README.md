@@ -13,20 +13,18 @@ You can use this guide to setup Nextcloud on a Docker container, using Nginx, Ce
     - `nginx_conf/nextcloud.conf`: 5 fields; your **server name** (domain name), your **path to _nextcloud-on-docker/nextcloud/html directory_**, your **ssl certificate** and **key**, your **domain name**
     - `docker-compose.yml`: 2 fields; your **redis password** and **port**
 
-**IMPORTANT NOTE: After you filled all required fields, your local repo will include sensitive informations (db password, redis password...), so make sure to keep your repo private.**
+> [!IMPORTANT]
+> **After you filled all required fields, your local repo will include sensitive informations (db password, redis password...), so make sure to keep your repo private.**
 
 - You can finish the install with [Docker-compose file and commands](#docker-compose-file-and-commands) and [Nextcloud start-up](#nextcloud-start-up)
 - Some important security topics are discussed in [Security](#security), don't understimate this section!
 
 
 # Table of Contents
-- [nextcloud-on-docker](#nextcloud-on-docker)
-- [Table of Contents](#table-of-contents)
 - [Setup and Docker installation](#setup-and-docker-installation)
   - [Set up a static IP address](#set-up-a-static-ip-address)
   - [Network configuration](#network-configuration)
-  - [Docker installation](#docker-installation)
-  - [Docker-compose installation](#docker-compose-installation)
+  - [Docker & Docker Compose installation](#docker--docker-compose-installation)
   - [Mount an external drive to your server](#mount-an-external-drive-to-your-server)
 - [Configuration](#configuration)
   - [Docker environment configuration](#docker-environment-configuration)
@@ -52,7 +50,7 @@ These are the preliminary steps before cloning this repository in step [Configur
 
 The best way to do that is usually on your **Internet Provider administration panel**. Look for something like **DHCP**, and make your local ip address static.
 
-Otherwise, you can also use network configuration tools, such as NetworkManager, Netplan, dhcpcd... If you prefer this option, I let you do your own researches according to the tool you use.
+> Otherwise, you can also use network configuration tools, such as *NetworkManager*, *Netplan*, *dhcpcd*... If you prefer this option, I let you do your own researches according to the tool you're using.
 
 ## Network configuration
 
@@ -72,8 +70,8 @@ From here, ufw will be enabled at boot.
 The Docker installation procedure changes according to the distribution you are running.
 
 Also, you can choose to either:
-- [install Docker Desktop](https://docs.docker.com/desktop/)) which embeds Docker Engine and Docker Compose.
-- [install Docker Engine](https://docs.docker.com/engine/install) and then [install the Docker Compose Linux Plugin](https://docs.docker.com/compose/install/linux/#install-using-the-repository). I personally chose this method.
+- [Install Docker Desktop](https://docs.docker.com/desktop/) which embeds Docker Engine and Docker Compose.
+- [Install Docker Engine](https://docs.docker.com/engine/install) and then [install the Docker Compose Linux Plugin](https://docs.docker.com/compose/install/linux/#install-using-the-repository). I personally chose this method.
 
 After that, you can add your user to the docker group to be able to run Docker commands without sudo:
 ```bash
@@ -89,6 +87,46 @@ docker-compose --version
 ## Mount an external drive to your server
 
 ### Recommended format: ext4
+
+> [!NOTE]
+> <details>
+> <summary><em>If you prefer to use NTFS for Windows Compatibility of your drive</em></summary>
+> 
+> First, install ntfs-3g to be able to work with ntfs partition:
+> ```bash
+> sudo apt install ntfs-3g
+> ```
+> 
+> Next, get your drive partition name with `sudo fdisk -l`.
+> 
+> Create a folder where the disk will be mounted:
+> ```bash
+> mkdir /mnt/EXT_HDD
+> ```
+> 
+> You can now mount the ntfs partition by doing:
+> ```bash
+> sudo mount -t ntfs-3g -o uid=33,gid=33,umask=0007 /dev/sdb1 /mnt/EXT_HDD/
+> ```
+> 
+> To get your disk UUID, do:
+> ```bash
+> ls -l /dev/disk/by-uuid/
+> ```
+> 
+> If you want, you can automate the mounting at startup by editing the **/etc/fstab** file:
+> ```bash
+> UUID=your_disk_UUID   /mnt/EXT_HDD    ntfs-3g auto,uid=33,gid=33,umask=0007     0       0
+> ```
+> 
+> (the umask is substracted to the normal chmod rights, so here with 0007 we get 770 rights)
+> 
+> You can now test by running `sudo mount -a` and trying to create and read a file to ensure that you have the right permissions.
+> 
+> --> If you followed this method, you can jump to [Finish your drive setup](#finish-your-drive-setup).
+> 
+> ----
+> </details>
 
 Get your drive partition name with `sudo fdisk -l` (in my case it was `/dev/sdb1`).
 
@@ -115,40 +153,6 @@ UUID=your_disk_UUID   /mnt/EXT_HDD    ext4     defaults     0       2
 You can now test by running `sudo mount -a` and trying to create and read a file to ensure that you have the right permissions.
 
 
-### If you prefer to use NTFS for Windows Compatibility of your drive
-
-First, install ntfs-3g to be able to work with ntfs partition:
-```bash
-sudo apt install ntfs-3g
-```
-
-Next, get your drive partition name with `sudo fdisk -l`.
-
-Create a folder where the disk will be mounted:
-```bash
-mkdir /mnt/EXT_HDD
-```
-
-You can now mount the ntfs partition by doing:
-```bash
-sudo mount -t ntfs-3g -o uid=33,gid=33,umask=0007 /dev/sdb1 /mnt/EXT_HDD/
-```
-
-To get your disk UUID, do:
-```bash
-ls -l /dev/disk/by-uuid/
-```
-
-If you want, you can automate the mounting at startup by editing the **/etc/fstab** file:
-```bash
-UUID=your_disk_UUID   /mnt/EXT_HDD    ntfs-3g auto,uid=33,gid=33,umask=0007     0       0
-```
-
-(the umask is substracted to the normal chmod rights, so here with 0007 we get 770 rights)
-
-You can now test by running `sudo mount -a` and trying to create and read a file to ensure that you have the right permissions.
-
-
 ### Finish your drive setup
 
 Once it is ok, create a folder for your data:
@@ -164,9 +168,11 @@ Now you can pull this repository.
 
 ## Docker environment configuration
 
-**IMPORTANT: Replace `to_fill` fields in `nextcloud/*.env`, `nginx_conf/certbot_base.conf`, `nginx_conf/certbot_base.conf`, and `docker-compose.yml` (redis part at the bottom) with the right informations.**
+> [!IMPORTANT]
+> **Replace `to_fill` fields in `nextcloud/*.env`, `nginx_conf/certbot_base.conf`, `nginx_conf/certbot_base.conf`, and `docker-compose.yml` (redis part at the bottom) with the right informations (see [introduction](#nextcloud-on-docker)).**
 
-Note: The environment file is only used at first run of the image, so if you want to do latter modifications, you need to directly edit the config.php file (mounted on the host).
+> [!NOTE]
+> The environment file is only used at first run of the image, so if you want to do latter modifications, you need to directly edit the config.php file (mounted on the host).
 
 ## Nginx configuration
 
