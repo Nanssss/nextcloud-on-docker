@@ -481,3 +481,10 @@ docker exec -u www-data nextcloud-nextcloud-1 php occ twofactorauth:disable --al
 ### On your server
 
 If you want even more security, you can set-up 2FA with Google Authenticator for example.
+
+----
+
+# Improvements
+
+- Remove redis password from `docker-compose.yml`. Maybe use redis.conf file to pass it.
+- Add a `./res/inputs file and parse it with a script (that add inputs to gitignore) to create `.env` files, and replace beacons in nginx confs and `docker-compose.yml`. Add inputs and .env files to gitignore to not push them on git.
