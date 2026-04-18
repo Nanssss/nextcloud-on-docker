@@ -366,11 +366,23 @@ The server security is a very important point, setting-up fail2ban protected my 
 Some parameters in the sshd configuration can easily increase your server security.
 
 In `/etc/ssh/sshdc_config`:
-- Modify the default ssh port: `Port ******`, *you can then connect by using the command `ssh -p <port> user@server` and by modifying the sshconfig in VSCode
-- Allow Pubkey authentication: `PubkeyAuthentication yes`
-- Disable password authentication: `PasswordAuthentication no`
-- Allow only specific users: `AllowUsers user1 user2`
-- Forbid users: `DenyUsers root`
+- Modify the default ssh port: `Port ******`, *you can then connect by using the command `ssh -p <port> user@server` and by modifying the sshconfig in VSCode.
+- Allow Pubkey authentication.
+- Disable password authentication.
+- Allow only specific users.
+- Disable root authentication.
+- Some other stuff.
+```
+Port 2222
+PubkeyAuthentication yes
+PasswordAuthentication no
+AllowUsers user1 user2
+PermitRootLogin no
+ChallengeResponseAuthentication no
+UsePAM no
+```
+
+Restart ssh service by doing `sudo service ssh restart` or `sudo service sshd restart`.
 
 ## Fail2ban
 
