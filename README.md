@@ -320,6 +320,25 @@ Now your nextcloud should be accessible from the url *your.domain.com*.
 
 You can install it by creating an admin account, with the database data from the nextcloud/db.env file. The database host should be the name of your database container, ie. mariadb.
 
+I advice you to add you email to Nextcloud, so that it can inform you of important events. To do so, connect with your admin account and go in *Administration -> Base Parameters -> Email Server*.
+
+Here is the config you can use for GMAIL:
+```
+Sending mode: SMTP
+Encryption: None/STARTTLS
+E-mail: <your_mail>    (@domain keep empty)
+Host: smtp.gmail.com    Port: 587
+Request authentication: Yes
+Login: <your_mail>
+Password: <your_application_password(see next)>
+```
+
+> [!IMPORTANT]
+> The password you must use just above is **NOT** your GMAIL password. It's an application password you must generate by following this procedure:
+> - Go to *Manage my Google Account -> Security and Connexion -> Two-factor authentication (must be enabled) -> Application password*, and add a new one here. Don't forget to note this password as you won't be able to see it again. This is the password you must input in the above password field.
+
+If you have a warning about "AppAPI", you can simply disable the corresponding the Nextcloud app.
+
 You can define a default phone region, here France, by doing:
 ```bash
 docker exec --user www-data -it <nextcloud_container> php occ config:system:set default_phone_region --value=FR
@@ -434,7 +453,18 @@ sudo ufw default deny incoming
 
 ### On Nextcloud
 
-You can easily add 2FA on your nextcloud-server. To do this, connect with your admin account, go in applications, and look for TOTP...
+You can easily add 2FA on your nextcloud-server. To do this, connect with your admin account, go in Applications, and look for "two-factor". You'll see several ways of adding 2FA, I personnaly prefer to use authenticator methods such as Google Authenticator, and thus used "Two-Factor TOTP Provider" application.
+
+Then, you can force 2FA for every user by going to *Administration -> Security -> Impose 2FA*.
+
+You can also use the following commands:
+```bash
+# Enable 2FA
+docker exec -u www-data nextcloud-nextcloud-1 php occ twofactorauth:enforce --on
+
+# Disable 2FA
+docker exec -u www-data nextcloud-nextcloud-1 php occ twofactorauth:disable --all <username>
+```
 
 ### On your server
 
