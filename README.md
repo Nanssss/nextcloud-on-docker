@@ -5,6 +5,9 @@ You can use this guide to setup Nextcloud on a Docker container, using Nginx, Ce
 - You first have to follow the [Setup](#setup-and-docker-installation) step to install everything required.
 - Then, you can blindly follow the [Configuration](#configuration) step to set everything up. Here, you will only **have to replace `to_fill` fields with your actual data**, you can then use `<CTRL>+F` to find all of these fields.
 
+> [!IMPORTANT]
+> **Don't use `$` character in your `.env` files**, as it is interpreted (you can escape it with `$$` but it's safer just not to use them).
+
     All these `to_fill` fields are listed below:
     - `nextcloud/db.env`: 2 fields; your **db root password** and **password**
     - `nextcloud/nextcloud.env`: 1 field; your **domain name** 
@@ -171,6 +174,9 @@ Now you can pull this repository.
 > [!IMPORTANT]
 > **Replace `to_fill` fields in `nextcloud/*.env`, `nginx_conf/certbot_base.conf`, `nginx_conf/certbot_base.conf`, and `docker-compose.yml` (redis part at the bottom) with the right informations (see [introduction](#nextcloud-on-docker)).**
 
+> [!IMPORTANT]
+> Before the first boot of your containers, please **check the *mariadb* version compatibility with the Nextcloud version you are using**, and specify it in the `docker-compose.yml` file.
+
 > [!NOTE]
 > The environment file is only used at first run of the image, so if you want to do latter modifications, you need to directly edit the config.php file (mounted on the host).
 
@@ -212,6 +218,9 @@ Nginx is set up, run:
 ```bash
 sudo nginx -s reload
 ```
+
+> [!IMPORTANT]
+> If you're playing with NGINX and it does not work, remind yourself to delete your navigator cache when requesting your server. Sometimes everything is fine and it's just your phone that is not really requesting the server!
 
 To set up automatic certificate renewal: 
 ```bash
@@ -422,5 +431,11 @@ sudo ufw default deny incoming
 - Reset to a clean configuration: `sudo ufw reset`
 
 ## Set-up 2FA
+
+### On Nextcloud
+
+You can easily add 2FA on your nextcloud-server. To do this, connect with your admin account, go in applications, and look for TOTP...
+
+### On your server
 
 If you want even more security, you can set-up 2FA with Google Authenticator for example.
