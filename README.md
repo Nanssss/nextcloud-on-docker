@@ -45,6 +45,16 @@ You can use this guide to setup Nextcloud on a Docker container, using Nginx, Ce
 
 ----
 
+# Improvements
+
+*Before starting, here is a little section about what could be improved in this guide.*
+
+- Remove redis password from `docker-compose.yml`. Maybe use redis.conf file to pass it.
+- Add a `./res/inputs` file and parse it with a script (that also add inputs to gitignore) to create `.env` files, and replace beacons in corresponding files.
+Add inputs and .env files to gitignore to not push them on git.
+
+----
+
 # Setup and Docker installation
 
 These are the preliminary steps before cloning this repository in step [Configuration](#configuration).
@@ -104,12 +114,12 @@ docker-compose --version
 > 
 > Create a folder where the disk will be mounted:
 > ```bash
-> mkdir /mnt/EXT_HDD
+> mkdir /mnt/my_drive
 > ```
 > 
 > You can now mount the ntfs partition by doing:
 > ```bash
-> sudo mount -t ntfs-3g -o uid=33,gid=33,umask=0007 /dev/sdb1 /mnt/EXT_HDD/
+> sudo mount -t ntfs-3g -o uid=33,gid=33,umask=0007 /dev/sdb1 /mnt/my_drive/
 > ```
 > 
 > To get your disk UUID, do:
@@ -119,7 +129,7 @@ docker-compose --version
 > 
 > If you want, you can automate the mounting at startup by editing the **/etc/fstab** file:
 > ```bash
-> UUID=your_disk_UUID   /mnt/EXT_HDD    ntfs-3g auto,uid=33,gid=33,umask=0007     0       0
+> UUID=your_disk_UUID   /mnt/my_drive    ntfs-3g auto,uid=33,gid=33,umask=0007     0       0
 > ```
 > 
 > (the umask is substracted to the normal chmod rights, so here with 0007 we get 770 rights)
@@ -135,12 +145,12 @@ Get your drive partition name with `sudo fdisk -l` (in my case it was `/dev/sdb1
 
 Create a folder where the disk will be mounted:
 ```bash
-mkdir /mnt/EXT_HDD
+mkdir /mnt/my_drive
 ```
 
 You can now mount the ext4 partition by doing:
 ```bash
-sudo mount -t ext4 /dev/sdb1 /mnt/EXT_HDD/
+sudo mount -t ext4 /dev/sdb1 /mnt/my_drive/
 ```
 
 To get your disk UUID, do:
@@ -150,7 +160,7 @@ ls -l /dev/disk/by-uuid/
 
 If you want, you can automate the mounting at startup by editing the **/etc/fstab** file:
 ```bash
-UUID=your_disk_UUID   /mnt/EXT_HDD    ext4     defaults     0       2
+UUID=your_disk_UUID   /mnt/my_drive    ext4     defaults     0       2
 ```
 
 You can now test by running `sudo mount -a` and trying to create and read a file to ensure that you have the right permissions.
@@ -160,7 +170,7 @@ You can now test by running `sudo mount -a` and trying to create and read a file
 
 Once it is ok, create a folder for your data:
 ```bash
-mkdir /mnt/EXT_HDD/nextcloud/data
+mkdir /mnt/my_drive/nextcloud/data
 ```
 
 ----
@@ -175,7 +185,7 @@ Now you can pull this repository.
 > **Replace `to_fill` fields in `nextcloud/*.env`, `nginx_conf/certbot_base.conf`, `nginx_conf/certbot_base.conf`, and `docker-compose.yml` (redis part at the bottom) with the right informations (see [introduction](#nextcloud-on-docker)).**
 
 > [!IMPORTANT]
-> Before the first boot of your containers, please **check the *mariadb* version compatibility with the Nextcloud version you are using**, and specify it in the `docker-compose.yml` file.
+> Before the first boot of your containers, please **check the [*mariadb* version compatibility](https://docs.nextcloud.com/server/stable/admin_manual/installation/system_requirements.html) with the Nextcloud version you are using**, and specify it in the `docker-compose.yml` file.
 
 > [!NOTE]
 > The environment file is only used at first run of the image, so if you want to do latter modifications, you need to directly edit the config.php file (mounted on the host).
@@ -197,7 +207,7 @@ sudo apt install certbot python3-certbot-nginx
 Now, you have to enable ssl, to do it, first put the certbot_base.conf file in nginx by doing:
 ```bash
 cd /etc/nginx/conf.d
-sudo ln -s /path/to/nextcloud-on-docker/nginx_conf/certbot.conf ./ # Fill with the right path
+sudo ln -s /path/to/nextcloud-on-docker/res/certbot.conf ./ # Fill with the right path
 sudo nginx -s reload
 ```
 
@@ -211,8 +221,10 @@ Now, edit the  `/etc/nginx/nginx.conf` file to comment the lines added by server
 
 Now, it's time to add the nextcloud nginx configuration file to `/etc/nginx/conf.d`.
 ```bash
-sudo ln -s /path/to/nextcloud-on-docker/nginx_conf/nextcloud.conf /etc/nginx/conf.d/
+sudo ln -s /path/to/nextcloud-on-docker/res/nextcloud.conf /etc/nginx/conf.d/
 ```
+
+Modify `nextcloud.conf` to put the **real ssl keys** (you can see them in the nginx.conf file) and **your domain**.
 
 Nginx is set up, run:
 ```bash
@@ -236,31 +248,13 @@ echo "vm.overcommit_memory = 1" | sudo tee -a /etc/sysctl.conf
 
 Also, in the `redis.env` file, the **REDIS_HOST** has to be the **container's name**.
 
-## Nextcloud configuration
-
-Be aware that OVERWRITEPROTOCOL and NEXTCLOUD_TRUSTED_DOMAINS have been set correctly. Otherwise you have to directly modify them in the config.php file mounted on the host. You can also verify "overwrite.cli.url".
-
-Same, be aware that redis have been set like this in the config.php file:
-```php
-'memcache.local' => '\\OC\\Memcache\\ACPu',
-  'filelocking.enabled' => true,
-  'memcache.distributed' => '\\OC\\Memcache\\Redis',
-  'memcache.locking' => '\\OC\\Memcache\\Redis',
-  'password' => 'your_password',
-  'redis' => [
-      'host' => 'redis',
-      'port' => your_port_without_quotes,
-      'timeout' => 0,
-  ],
-```
-
 ----
 
 # Docker-compose file and commands
 
-docker-compose syntax:
+`docker-compose.yml` syntax:
 
-- **ports**: "local (host, after passing through reverse proxy):docker (container)"
+- **ports**: "local*(host, after passing through reverse proxy)*:docker*(container)*"
 - **volumes**: host_path:container_path
 If you put a local host_path with **./**, it will directly mount the container path into this path, otherwise it will be in a docker volume.
 
@@ -320,7 +314,25 @@ Now your nextcloud should be accessible from the url *your.domain.com*.
 
 You can install it by creating an admin account, with the database data from the nextcloud/db.env file. The database host should be the name of your database container, ie. mariadb.
 
-I advice you to add you email to Nextcloud, so that it can inform you of important events. To do so, connect with your admin account and go in *Administration -> Base Parameters -> Email Server*.
+## Nextcloud configuration
+
+**After your first boot of the containers**, be aware that OVERWRITEPROTOCOL and NEXTCLOUD_TRUSTED_DOMAINS have been set correctly. Otherwise you have to directly modify them in the config.php file mounted on the host. You can also verify "overwrite.cli.url".
+
+Also, be aware that redis have been set like this in the config.php file (you may not see `filelocker.enabled`, but that's fine):
+```php
+'memcache.local' => '\\OC\\Memcache\\ACPu',
+  'filelocking.enabled' => true,
+  'memcache.distributed' => '\\OC\\Memcache\\Redis',
+  'memcache.locking' => '\\OC\\Memcache\\Redis',
+  'password' => 'your_password',
+  'redis' => [
+      'host' => 'redis',
+      'port' => 6379,
+      'timeout' => 0,
+  ],
+```
+
+I advise you to add you email to Nextcloud, so that it can inform you of important events. To do so, connect with your admin account and go in *Administration -> Base Parameters -> Email Server*.
 
 Here is the config you can use for GMAIL:
 ```
@@ -337,25 +349,82 @@ Password: <your_application_password(see next)>
 > The password you must use just above is **NOT** your GMAIL password. It's an application password you must generate by following this procedure:
 > - Go to *Manage my Google Account -> Security and Connexion -> Two-factor authentication (must be enabled) -> Application password*, and add a new one here. Don't forget to note this password as you won't be able to see it again. This is the password you must input in the above password field.
 
-If you have a warning about "AppAPI", you can simply disable the corresponding the Nextcloud app.
+If you have a warning about "AppAPI", you can simply disable the corresponding Nextcloud app.
 
-You can define a default phone region, here France, by doing:
+To finish, you can add your custom php config file to fix some warnings:
 ```bash
-docker exec --user www-data -it <nextcloud_container> php occ config:system:set default_phone_region --value=FR
+sudo cp ./res/custom.config.php ./nextcloud/html/config/
+# The pointed file
+sudo chown 33:33 /home/nans/docker/nextcloud/nextcloud/html/config/custom.config.php
+# The symlink itself
+sudo chown -h 33:33 /home/nans/docker/nextcloud/nextcloud/html/config/custom.config.php
 ```
+
+> [!NOTE]
+> *This is now already done with the custom php script, letting it here just in case.*
+> You can define a default phone region by doing:
+> ```bash
+> docker exec --user www-data -it <nextcloud_container> php occ config:system:set default_phone_region --value=FR
+> ```
+
 If missing, you can add the php-bz2 module by doing:
 ```bash
 docker exec -it <nextcloud_container> /bin/bash
 apt-get update && apt-get install -y libbz2-dev && docker-php-ext-install bz2
 ```
 
-----
+## Nextcloud backup service
+
+> [!NOTE]
+> In these scripts, I am using RTC to setup server maintenance.
+> Your pc should support RTC alarm, you can first verify you have such an option in your BIOS setup and enable id.
+> Next, on software side, you can check if you have rtcwake by doing `which rtcwake`. If not, install il.
+
+A backup script is provided in this repo, to use it:
+1. Fill `scripts/setup_backup.env` file with the correct data.
+2. Run this to create and enable the service.
+```bash
+cd ./scripts
+./setup_backup.sh
+```
+
+From now on, the Nextcloud maintenance service runs automatically on RTC wakeup, performs backup and maintenance, then shuts down the server.
+
+## How to restore a backup
+
+1. Enabled maintenance mode
+```
+docker exec -u www-data nextcloud-nextcloud-1 php occ maintenance:mode --on
+```
+
+2. Restore database
+```
+docker exec -i nextcloud-mariadb-1 mariadb -u root -p"$(docker exec nextcloud-mariadb-1 printenv MYSQL_ROOT_PASSWORD)" < /mnt/toshiba-hdd/backups/20260418/db.sql
+```
+
+3. Restore files
+```
+rsync -av /mnt/toshiba-hdd/backups/20260418/data/ /mnt/toshiba-hdd/nextcloud/data/
+```
+
+4. Fix permissions
+```
+sudo chown -R 33:33 /mnt/toshiba-hdd/nextcloud/data/
+```
+
+5. Scan files
+```
+docker exec -u www-data nextcloud-nextcloud-1 php occ files:scan --all
+```
+
+6. Disable maintenance mode
+```
+docker exec -u www-data nextcloud-nextcloud-1 php occ maintenance:mode --off
+```
 
 # Automatic Sync
 
 After start-up, you can install the smartphone app and .exe on Windows. Whis them, it is possible to set-up automatic folder sync!
-
-----
 
 # Security
 
@@ -372,6 +441,7 @@ In `/etc/ssh/sshdc_config`:
 - Allow only specific users.
 - Disable root authentication.
 - Some other stuff.
+
 ```
 Port 2222
 PubkeyAuthentication yes
@@ -481,10 +551,3 @@ docker exec -u www-data nextcloud-nextcloud-1 php occ twofactorauth:disable --al
 ### On your server
 
 If you want even more security, you can set-up 2FA with Google Authenticator for example.
-
-----
-
-# Improvements
-
-- Remove redis password from `docker-compose.yml`. Maybe use redis.conf file to pass it.
-- Add a `./res/inputs file and parse it with a script (that add inputs to gitignore) to create `.env` files, and replace beacons in nginx confs and `docker-compose.yml`. Add inputs and .env files to gitignore to not push them on git.
