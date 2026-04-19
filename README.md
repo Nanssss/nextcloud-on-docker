@@ -24,24 +24,31 @@ You can use this guide to setup Nextcloud on a Docker container, using Nginx, Ce
 
 
 # Table of Contents
+- [Improvements](#improvements)
 - [Setup and Docker installation](#setup-and-docker-installation)
   - [Set up a static IP address](#set-up-a-static-ip-address)
   - [Network configuration](#network-configuration)
-  - [Docker & Docker Compose installation](#docker--docker-compose-installation)
+  - [Docker \& Docker Compose installation](#docker--docker-compose-installation)
   - [Mount an external drive to your server](#mount-an-external-drive-to-your-server)
+    - [Recommended format: ext4](#recommended-format-ext4)
+    - [Finish your drive setup](#finish-your-drive-setup)
 - [Configuration](#configuration)
   - [Docker environment configuration](#docker-environment-configuration)
   - [Nginx configuration](#nginx-configuration)
   - [Redis configuration](#redis-configuration)
-  - [Nextcloud configuration](#nextcloud-configuration)
 - [Docker-compose file and commands](#docker-compose-file-and-commands)
 - [Nextcloud start-up](#nextcloud-start-up)
+  - [Nextcloud configuration](#nextcloud-configuration)
+  - [Nextcloud backup service](#nextcloud-backup-service)
+  - [How to restore a backup](#how-to-restore-a-backup)
 - [Automatic Sync](#automatic-sync)
 - [Security](#security)
   - [sshd configuration](#sshd-configuration)
   - [Fail2ban](#fail2ban)
   - [Set-up UFW (Uncomplicated FireWall)](#set-up-ufw-uncomplicated-firewall)
   - [Set-up 2FA](#set-up-2fa)
+    - [On Nextcloud](#on-nextcloud)
+    - [On your server](#on-your-server)
 
 ----
 
