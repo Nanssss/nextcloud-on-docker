@@ -1,0 +1,12 @@
+[Unit]
+Description=Nextcloud Maintenance and Backup
+After=docker.service network-online.target local-fs-pre.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/nextcloud-maintenance-backup.sh
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target

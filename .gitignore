@@ -1,6 +1,7 @@
 # Ignore contents of nextcloud/html
 nextcloud/html/*
 !nextcloud/html/.gitkeep
+!nextcloud/html/config/custom.config.php
 
 # Ignore contents of nextcloud/redis
 nextcloud/redis/*

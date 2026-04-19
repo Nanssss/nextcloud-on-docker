@@ -1,5 +1,3 @@
-version: '3'
-
 services:
 
   # Nextcloud
@@ -21,7 +19,7 @@ services:
 
   # MariaDB server for Nextcloud
   mariadb:
-    image: mariadb:latest
+    image: mariadb:11.8
     restart: always
     command: --transaction-isolation=READ-COMMITTED --log-bin=binlog --binlog-format=ROW
     env_file:
